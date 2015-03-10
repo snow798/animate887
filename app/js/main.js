@@ -36,8 +36,8 @@ Module.prototype.registerModule = function(name, obj){
 
     console.log(_config, extObj, this);
     //extObj.init();
-    console.log(this.Modules);
-    this.Modules[name].init();
+    console.log(this.Modules, this.subModules);
+    this.subModules[name].init();    //执行初始化
 
 }
 
@@ -79,21 +79,21 @@ mainPage.registerModule('nav', {
         z: _config.defaultZ
     },
     init: function(){
-        console.log(this, long)
-        /*geometry = new THREE.BoxGeometry( this.long, this.width, this.height );                                   //尺寸设置
+        console.log(this, this.long)
+        geometry = new THREE.BoxGeometry( this.long, this.width, this.height );                                   //尺寸设置
         material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );      //贴图设置  
         navContainer = new THREE.Mesh( geometry, material );                                 //生成导航外围容器
         scene.add( navContainer );                                                           //将导航容器添加到场景
-        navContainer.position.set(this.config.x, this.config.y, this.config.z);                                              //设置导航坐标*/
+        navContainer.position.set(this.x, this.y, this.z);                                              //设置导航坐标
     },
     animate: function(){
-        /*this.config.z -= 20;
-        this.config.x -= 10;*/ 
+        /*this.z -= 1;
+        this.x -= 1; */
+        //console.log(this);
+        navContainer.rotation.x += 0.03;
+        navContainer.rotation.y += 0.05;
 
-        /*navContainer.rotation.x += 0.03;
-        navContainer.rotation.y += 0.05;*/
-
-        navContainer.position.set(this.config.x, this.config.y, this.config.z);
+       // navContainer.position.set(this.x, this.y, this.z);
     }
 })
 
@@ -105,8 +105,9 @@ function animate() {
     mesh.rotation.x += 0.01;
     mesh.rotation.y += 0.02;
     //mainPage.animate();
-    for( M in mainPage.Modules){
-      //  mainPage.Modules[M][1].animate(); 
+    for( M in mainPage.subModules){
+        mainPage.subModules[M].init.animate()
+        //console.log(mainPage.subModules[M].init.animate());
     }
     //console.log(_config.nav.z)
     renderer.render( scene, camera );
