@@ -8,17 +8,27 @@ require({
 　　　　　　deps: ['vendor/three'],
 　　　　　　exports: 'THREE.ColladaLoader'
 　　　　},
-        'vendor/OBJLoader': {
+        'vendor/DDSLoader': {
         　　　　　　deps: ['vendor/three'],
-        　　　　　　exports: 'THREE.OBJLoader'
+        　　　　　　exports: 'THREE.DDSLoader'
+        　　　　},
+        'vendor/MTLLoader': {
+        　　　　　　deps: ['vendor/three'],
+        　　　　　　exports: 'THREE.MTLLoader'
+        　　　　},
+        'vendor/OBJMTLLoader': {
+        　　　　　　deps: ['vendor/three','vendor/DDSLoader', 'vendor/MTLLoader'],
+        　　　　　　exports: 'THREE.OBJMTLLoader'
         　　　　}
      }
 }, [
     'vendor/jquery-1.9.1',
     'vendor/three',
+    'vendor/DDSLoader',
     'vendor/ColladaLoader',
-    'vendor/OBJLoader'
-], function($ , THREE, ColladaLoader, OBJLoader) {
+    'vendor/MTLLoader',
+    'vendor/OBJMTLLoader'
+], function($ , THREE, DDSLoader, ColladaLoader, MTLLoader, OBJMTLLoader) {
 
 var _config = {
         wWidth : window.innerWidth,       //场景宽/高
@@ -39,6 +49,7 @@ function Module(name){
     this.Modules.push(this.name);
 }
 Module.prototype.Modules = [];
+Module.prototype.manager = {};
 Module.prototype.registerModule = function(name, obj){
     if( typeof name !== 'string' && typeof obj !== 'object' ) return 
     if( this.subModules[name] ) return console.log('subModule has been');
@@ -53,7 +64,7 @@ Module.prototype.registerModule = function(name, obj){
     console.log(this.Modules, this.subModules);
     this.subModules[name]._init();    //执行初始化
 
-}
+};
 
 //初始化
 init();
@@ -61,21 +72,21 @@ init();
 
 
 function init() {
-
+    //默认消息管理
+    this.manager = new THREE.LoadingManager();
+    this.manager.onProgress = function ( item, loaded, total ) {
+           console.log( item, loaded, total );
+    };
     scene = new THREE.Scene();
-
     camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 1, 10000 );
     camera.position.z = 1000;
-
     geometry = new THREE.BoxGeometry( 200, 200, 200 );
     material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );
-
     mesh = new THREE.Mesh( geometry, material );
     scene.add( mesh );
-
+    
     renderer = new THREE.WebGLRenderer();
     renderer.setSize( window.innerWidth, window.innerHeight );
-
     document.body.appendChild( renderer.domElement );
 }
 
@@ -94,37 +105,50 @@ mainPage.registerModule('nav', {
         z: _config.defaultZ
     },
     init: function(){
+        var root = this;
         console.log(this, this.long)
-        var geometry = new THREE.BoxGeometry( this.long, this.width, this.height );                                   //尺寸设置
-        var material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );      //贴图设置  
+        var geometry = new THREE.BoxGeometry( this.long, this.width, this.height );               //尺寸设置
+        var material = new THREE.MeshBasicMaterial( { color: 0xff0000, wireframe: true } );       //贴图设置  
         this.navContainer = new THREE.Mesh( geometry, material );                                 //生成导航外围容器
         scene.add( this.navContainer );                                                           //将导航容器添加到场景
-        this.navContainer.position.set(this.x, this.y, this.z);                                              //设置导航坐标
-        var self = this;
-        var loader = new THREE.JSONLoader(true);  
-        /*loader.load("/js/mode/ss.obj", function ( geometry ) {  
-        self.obj = new THREE.Mesh(geometry, material);  
-        //geometry.scale.x = geometry.scale.y = 100;
-        //obj.position.set(0,1,990);  
-        self.obj.position.set(0, 0, 990);
-        self.obj.rotation.x = 45;
-        console.log(self.obj);
-        scene.add(self.obj);  
-          
-       }
+        this.navContainer.position.set(this.x, this.y, this.z);                                   //设置导航坐标
 
-       );*/
+                /*var texture = new THREE.Texture();
+                var loader = new THREE.ImageLoader( root.manager );
+                loader.load( 'js/mode/ok/Translucent_Glass_Gold.jpg', function ( image ) {
+                    texture.image = image;
+                    texture.needsUpdate = true;
+                } );*/
+                // model
+                /*var loader = new THREE.OBJMTLLoader( root.manager );
+                loader.load( 'js/mode/ok.obj', function ( object ) {
+                    object.traverse( function ( child ) {
+                        console.log(child,texture);
+                        if ( child instanceof THREE.Mesh ) {
+                            child.material.map = texture;
+                        }
+                    } );
+                    object.position.y = - 80;
+                    object.position.z = 780;
+                    scene.add( object );
+                });*/
+                var loader = new THREE.OBJMTLLoader();
+                loader.load('js/mode/oo.obj', 'js/mode/oo.mtl',function ( object ) {
 
-        /*var  loader = new  THREE.ColladaLoader(); 
-            loader.load( '/js/mode/nav.json', function( result ){ 
-              scene.add( result ); 
-            });*/
-         var oLoader = new THREE.OBJLoader();
-          oLoader.load('/js/mode/ss.obj', function(object, materials) {
+                    //object.position.y = - 80;
+                    object.position.z = 580;
+                    scene.add( object );
+                    window.ss= object;
 
-            console.log(object, materials);
-            scene.add(object);
-        })
+                });
+
+               
+            var directionalLight = new THREE.DirectionalLight( 0xffeedd );
+                directionalLight.position.set( 0, 100, 100 );
+                scene.add( directionalLight );
+                
+        
+        
 
     },
     animate: function(){
@@ -135,7 +159,8 @@ mainPage.registerModule('nav', {
         this.navContainer.rotation.y += 0.05;*/
         this.navContainer.rotation.x += 0.03;
         //console.log(this.obj);
-
+        ss.rotation.y += 0.01
+        ss.rotation.x += 0.01
         /*this.obj.rotation.x = 0.03;
         this.obj.rotation.y += 0.01;*/
 
